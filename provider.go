@@ -6,6 +6,14 @@ import (
 
 func Provider() *schema.Provider {
 	return &schema.Provider{
-		ResourcesMap: map[string]*schema.Resource{},
+		Schema: map[string]*schema.Schema{
+			"token": {
+				Type:     schema.TypeString,
+				Required: true,
+			},
+		},
+		ResourcesMap: map[string]*schema.Resource{
+			"telegram_bot_webhook": resourceBotWebhook(),
+		},
 	}
 }
