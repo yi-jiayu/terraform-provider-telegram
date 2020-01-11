@@ -1,4 +1,4 @@
-package main
+package telegram
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
-//go:generate mockgen -source=resource_telegram_bot_webhook.go -destination=mocks/resource_telegram_bot_webhook.go -package=mocks
+//go:generate mockgen -source=resource_telegram_bot_webhook.go -destination=../mocks/resource_telegram_bot_webhook.go -package=mocks
 
 type webhookSetter interface {
 	ID() string
