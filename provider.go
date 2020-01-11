@@ -16,8 +16,11 @@ func Provider() *schema.Provider {
 				Sensitive: true,
 			},
 		},
+		DataSourcesMap: map[string]*schema.Resource{
+			"telegram_bot": dataSourceTelegramBot(),
+		},
 		ResourcesMap: map[string]*schema.Resource{
-			"telegram_bot_webhook": resourceBotWebhook(),
+			"telegram_bot_webhook": resourceTelegramBotWebhook(),
 		},
 		ConfigureFunc: providerConfigure,
 	}

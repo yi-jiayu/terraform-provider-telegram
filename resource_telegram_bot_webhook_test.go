@@ -11,7 +11,7 @@ import (
 	"github.com/yi-jiayu/terraform-provider-telegram/mocks"
 )
 
-func Test_resourceBotWebhookCreate(t *testing.T) {
+func Test_resourceTelegramBotWebhookCreate(t *testing.T) {
 	tests := []struct {
 		name     string
 		state    map[string]interface{}
@@ -65,18 +65,18 @@ func Test_resourceBotWebhookCreate(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			m := mocks.NewMockWebhookSetter(ctrl)
+			m := mocks.NewMockwebhookSetter(ctrl)
 			m.EXPECT().SetWebhook(gomock.Any()).Return(tt.response, tt.err)
 			m.EXPECT().ID().Return("1234").AnyTimes()
 
-			d := schema.TestResourceDataRaw(t, resourceBotWebhook().Schema, tt.state)
-			err := resourceBotWebhookCreate(d, m)
+			d := schema.TestResourceDataRaw(t, resourceTelegramBotWebhook().Schema, tt.state)
+			err := resourceTelegramBotWebhookCreate(d, m)
 			tt.assert(t, d, err)
 		})
 	}
 }
 
-func Test_resourceBotWebhookRead(t *testing.T) {
+func Test_resourceTelegramBotWebhookRead(t *testing.T) {
 	tests := []struct {
 		name   string
 		state  map[string]interface{}
@@ -85,7 +85,7 @@ func Test_resourceBotWebhookRead(t *testing.T) {
 		assert func(t *testing.T, d *schema.ResourceData, err error)
 	}{
 		{
-			name: "state changed",
+			name: "read success",
 			state: map[string]interface{}{
 				"url": "https://www.example.com/oldWebhook",
 			},
@@ -138,17 +138,17 @@ func Test_resourceBotWebhookRead(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			m := mocks.NewMockWebhookGetter(ctrl)
+			m := mocks.NewMockwebhookGetter(ctrl)
 			m.EXPECT().GetWebhookInfo().Return(tt.info, tt.err)
 
-			d := schema.TestResourceDataRaw(t, resourceBotWebhook().Schema, tt.state)
-			err := resourceBotWebhookRead(d, m)
+			d := schema.TestResourceDataRaw(t, resourceTelegramBotWebhook().Schema, tt.state)
+			err := resourceTelegramBotWebhookRead(d, m)
 			tt.assert(t, d, err)
 		})
 	}
 }
 
-func Test_resourceBotWebhookDelete(t *testing.T) {
+func Test_resourceTelegramBotWebhookDelete(t *testing.T) {
 	tests := []struct {
 		name     string
 		state    map[string]interface{}
@@ -198,11 +198,11 @@ func Test_resourceBotWebhookDelete(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			m := mocks.NewMockWebhookRemover(ctrl)
+			m := mocks.NewMockwebhookRemover(ctrl)
 			m.EXPECT().RemoveWebhook().Return(tt.response, tt.err)
 
-			d := schema.TestResourceDataRaw(t, resourceBotWebhook().Schema, tt.state)
-			err := resourceBotWebhookDelete(d, m)
+			d := schema.TestResourceDataRaw(t, resourceTelegramBotWebhook().Schema, tt.state)
+			err := resourceTelegramBotWebhookDelete(d, m)
 			tt.assert(t, d, err)
 		})
 	}
