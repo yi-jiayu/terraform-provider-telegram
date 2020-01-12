@@ -2,208 +2,87 @@ package telegram
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
-	"github.com/golang/mock/gomock"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-
-	"github.com/yi-jiayu/terraform-provider-telegram/mocks"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
 
-func Test_resourceTelegramBotWebhookCreate(t *testing.T) {
-	tests := []struct {
-		name     string
-		state    map[string]interface{}
-		response tgbotapi.APIResponse
-		err      error
-		assert   func(t *testing.T, d *schema.ResourceData, err error)
-	}{
-		{
-			name:     "webhook created",
-			response: tgbotapi.APIResponse{Ok: true},
-			assert: func(t *testing.T, d *schema.ResourceData, err error) {
-				if err != nil {
-					t.Fatal("wanted err to be nil")
-				}
-				want := "1234"
-				if got := d.Id(); got != want {
-					t.Fatalf("wanted id to be %s, got %s", want, got)
-				}
+func TestAccResourceTelegramBotWebhook(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccResourceTelegramBotWebhookDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+resource "telegram_bot_webhook" "example" {
+  url = "https://www.example.com/webhook"
+}`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("telegram_bot_webhook.example", "url", "https://www.example.com/webhook"),
+					testAccResourceTelegramBotWebhook("telegram_bot_webhook.example"),
+				),
+			},
+			{
+				Config: `
+resource "telegram_bot_webhook" "example" {
+  url = "https://www.example.com/newWebhook"
+}`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("telegram_bot_webhook.example", "url", "https://www.example.com/newWebhook"),
+					testAccResourceTelegramBotWebhook("telegram_bot_webhook.example"),
+				),
+			},
+			{
+				PreConfig: func() {
+					botAPI := testAccProvider.Meta().(*tgbotapi.BotAPI)
+					_, err := botAPI.RemoveWebhook()
+					if err != nil {
+						t.Fatalf("error removing webhook: %s", err)
+					}
+				},
+				Config: `
+resource "telegram_bot_webhook" "example" {
+  url = "https://www.example.com/newWebhook"
+}`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("telegram_bot_webhook.example", "url", "https://www.example.com/newWebhook"),
+					testAccResourceTelegramBotWebhook("telegram_bot_webhook.example"),
+				),
 			},
 		},
-		{
-			name:     "error setting webhook",
-			response: tgbotapi.APIResponse{},
-			err:      errors.New("error"),
-			assert: func(t *testing.T, d *schema.ResourceData, err error) {
-				if err == nil {
-					t.Fatal("wanted err to be non-nil")
-				}
-				want := "error"
-				if got := err.Error(); got != want {
-					t.Fatalf("wanted error to be %s, got %s", want, got)
-				}
-			},
-		},
-		{
-			name:     "response not ok",
-			response: tgbotapi.APIResponse{Ok: false, Description: "description"},
-			assert: func(t *testing.T, d *schema.ResourceData, err error) {
-				if err == nil {
-					t.Fatal("wanted err to be non-nil")
-				}
-				want := "description"
-				if got := err.Error(); got != want {
-					t.Fatalf("wanted error to be %s, got %s", want, got)
-				}
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+	})
+}
 
-			m := mocks.NewMockwebhookSetter(ctrl)
-			m.EXPECT().SetWebhook(gomock.Any()).Return(tt.response, tt.err)
-			m.EXPECT().ID().Return("1234").AnyTimes()
-
-			d := schema.TestResourceDataRaw(t, resourceTelegramBotWebhook().Schema, tt.state)
-			err := resourceTelegramBotWebhookCreate(d, m)
-			tt.assert(t, d, err)
-		})
+func testAccResourceTelegramBotWebhook(n string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[n]
+		if !ok {
+			return fmt.Errorf("resource not found: %s", n)
+		}
+		botAPI := testAccProvider.Meta().(*tgbotapi.BotAPI)
+		info, err := botAPI.GetWebhookInfo()
+		if err != nil {
+			return err
+		}
+		if got, want := info.URL, rs.Primary.Attributes["url"]; got != want {
+			return fmt.Errorf("wanted webhook to be set to %s, got %s", want, got)
+		}
+		return nil
 	}
 }
 
-func Test_resourceTelegramBotWebhookRead(t *testing.T) {
-	tests := []struct {
-		name   string
-		state  map[string]interface{}
-		info   tgbotapi.WebhookInfo
-		err    error
-		assert func(t *testing.T, d *schema.ResourceData, err error)
-	}{
-		{
-			name: "read success",
-			state: map[string]interface{}{
-				"url": "https://www.example.com/oldWebhook",
-			},
-			info: tgbotapi.WebhookInfo{URL: "https://www.example.com/newWebhook"},
-			err:  nil,
-			assert: func(t *testing.T, d *schema.ResourceData, err error) {
-				if err != nil {
-					t.Fatal("wanted err to be nil")
-				}
-				want := "https://www.example.com/newWebhook"
-				if got := d.Get("url").(string); got != want {
-					t.Fatalf("wanted url to be %s, got %s", want, got)
-				}
-			},
-		},
-		{
-			name: "webhook removed",
-			state: map[string]interface{}{
-				"id": "123",
-			},
-			info: tgbotapi.WebhookInfo{URL: ""},
-			err:  nil,
-			assert: func(t *testing.T, d *schema.ResourceData, err error) {
-				if err != nil {
-					t.Fatal("wanted err to be nil")
-				}
-				if d.Id() != "" {
-					t.Fatal("wanted id to be set to empty string")
-				}
-			},
-		},
-		{
-			name:  "error getting webhook response",
-			state: nil,
-			info:  tgbotapi.WebhookInfo{},
-			err:   errors.New("error"),
-			assert: func(t *testing.T, d *schema.ResourceData, err error) {
-				if err == nil {
-					t.Fatal("wanted err to be non-nil")
-				}
-				want := "error"
-				if got := err.Error(); got != want {
-					t.Fatalf("wanted err to be %s, got %s", want, got)
-				}
-			},
-		},
+func testAccResourceTelegramBotWebhookDestroy(*terraform.State) error {
+	botAPI := testAccProvider.Meta().(*tgbotapi.BotAPI)
+	info, err := botAPI.GetWebhookInfo()
+	if err != nil {
+		return err
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
-
-			m := mocks.NewMockwebhookGetter(ctrl)
-			m.EXPECT().GetWebhookInfo().Return(tt.info, tt.err)
-
-			d := schema.TestResourceDataRaw(t, resourceTelegramBotWebhook().Schema, tt.state)
-			err := resourceTelegramBotWebhookRead(d, m)
-			tt.assert(t, d, err)
-		})
+	if got, want := info.URL, ""; got != want {
+		return errors.New("webhook was not destroyed")
 	}
-}
-
-func Test_resourceTelegramBotWebhookDelete(t *testing.T) {
-	tests := []struct {
-		name     string
-		state    map[string]interface{}
-		response tgbotapi.APIResponse
-		err      error
-		assert   func(t *testing.T, d *schema.ResourceData, err error)
-	}{
-		{
-			name:     "webhook deleted",
-			response: tgbotapi.APIResponse{Ok: true},
-			assert: func(t *testing.T, d *schema.ResourceData, err error) {
-				if err != nil {
-					t.Fatal("wanted err to be nil")
-				}
-			},
-		},
-		{
-			name:     "error deleting webhook",
-			response: tgbotapi.APIResponse{},
-			err:      errors.New("error"),
-			assert: func(t *testing.T, d *schema.ResourceData, err error) {
-				if err == nil {
-					t.Fatal("wanted err to be non-nil")
-				}
-				want := "error"
-				if got := err.Error(); got != want {
-					t.Fatalf("wanted error to be %s, got %s", want, got)
-				}
-			},
-		},
-		{
-			name:     "response not ok",
-			response: tgbotapi.APIResponse{Ok: false, Description: "description"},
-			assert: func(t *testing.T, d *schema.ResourceData, err error) {
-				if err == nil {
-					t.Fatal("wanted err to be non-nil")
-				}
-				want := "description"
-				if got := err.Error(); got != want {
-					t.Fatalf("wanted error to be %s, got %s", want, got)
-				}
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
-
-			m := mocks.NewMockwebhookRemover(ctrl)
-			m.EXPECT().RemoveWebhook().Return(tt.response, tt.err)
-
-			d := schema.TestResourceDataRaw(t, resourceTelegramBotWebhook().Schema, tt.state)
-			err := resourceTelegramBotWebhookDelete(d, m)
-			tt.assert(t, d, err)
-		})
-	}
+	return nil
 }

@@ -3,7 +3,6 @@ package telegram
 import (
 	"errors"
 	"os"
-	"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
@@ -27,14 +26,6 @@ func Provider() *schema.Provider {
 	}
 }
 
-type BotAPI struct {
-	*tgbotapi.BotAPI
-}
-
-func (bot BotAPI) ID() string {
-	return strconv.Itoa(bot.Self.ID)
-}
-
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	var token string
 	if s, ok := d.Get("bot_token").(string); ok {
@@ -46,9 +37,5 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	if token == "" {
 		return nil, errors.New("either bot_token or the environment variable TELEGRAM_BOT_TOKEN should be set")
 	}
-	botAPI, err := tgbotapi.NewBotAPI(token)
-	if err != nil {
-		return nil, err
-	}
-	return BotAPI{botAPI}, nil
+	return tgbotapi.NewBotAPI(token)
 }

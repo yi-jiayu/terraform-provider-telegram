@@ -3,6 +3,7 @@ package telegram
 import (
 	"strconv"
 
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
 )
 
@@ -27,7 +28,7 @@ func dataSourceTelegramBot() *schema.Resource {
 }
 
 func dataSourceTelegramBotRead(d *schema.ResourceData, m interface{}) error {
-	botAPI := m.(BotAPI)
+	botAPI := m.(*tgbotapi.BotAPI)
 	self := botAPI.Self
 	d.SetId(strconv.Itoa(self.ID))
 	if err := d.Set("user_id", self.ID); err != nil {

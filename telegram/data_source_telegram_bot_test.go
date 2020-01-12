@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"testing"
 
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
 )
@@ -28,7 +29,7 @@ func testAccDataSourceTelegramBot(n string) resource.TestCheckFunc {
 		if !ok {
 			return fmt.Errorf("resource not found: %s", n)
 		}
-		bot := testAccProvider.Meta().(BotAPI).Self
+		bot := testAccProvider.Meta().(*tgbotapi.BotAPI).Self
 		if got, want := rs.Primary.ID, strconv.Itoa(bot.ID); got != want {
 			return fmt.Errorf("wanted ID to be %s, got %s", want, got)
 		}
