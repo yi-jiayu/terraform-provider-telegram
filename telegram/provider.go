@@ -1,6 +1,8 @@
 package telegram
 
 import (
+	"errors"
+	"os"
 	"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -11,9 +13,8 @@ func Provider() *schema.Provider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"bot_token": {
-				Type:      schema.TypeString,
-				Required:  true,
-				Sensitive: true,
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 		},
 		DataSourcesMap: map[string]*schema.Resource{
@@ -35,8 +36,17 @@ func (bot BotAPI) ID() string {
 }
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
-	s := d.Get("bot_token").(string)
-	botAPI, err := tgbotapi.NewBotAPI(s)
+	var token string
+	if s, ok := d.Get("bot_token").(string); ok {
+		token = s
+	}
+	if token == "" {
+		token = os.Getenv("TELEGRAM_BOT_TOKEN")
+	}
+	if token == "" {
+		return nil, errors.New("either bot_token or the environment variable TELEGRAM_BOT_TOKEN should be set")
+	}
+	botAPI, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return nil, err
 	}

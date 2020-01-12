@@ -18,4 +18,6 @@ provider "telegram" {
 
 The following arguments are supported in the Telegram `provider` block:
 
-* `bot_token` (Required) - The unique authentication token provided when a bot is created.
+* `bot_token` (Optional) - The unique authentication token provided when a bot
+  is created. Can also be provided through the environment variable
+  `TELEGRAM_BOT_TOKEN`.

@@ -6,7 +6,6 @@ bot.
 ## Example Usage
 
 ```hcl
-
 data "telegram_bot" "example" {}
 
 output "bot_link" {
@@ -21,6 +20,6 @@ There are no arguments available for this data source.
 
 ## Attributes Reference
 
-* `id` - Unique identifier for the bot.
+* `user_id` - Unique identifier for the bot.
 * `name` - Bot name.
 * `username` - Bot username.
