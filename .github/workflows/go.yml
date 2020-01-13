@@ -2,8 +2,8 @@ name: Go
 on: [push]
 jobs:
 
-  build:
-    name: Build
+  test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
 
@@ -16,7 +16,10 @@ jobs:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v1
 
-    - name: Test
+    - name: Build
+      run: go build ./...
+
+    - name: Run tests
       run: go test -v ./...
       env:
         TF_ACC: 1
