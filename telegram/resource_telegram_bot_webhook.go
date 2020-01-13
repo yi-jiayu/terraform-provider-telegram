@@ -1,7 +1,7 @@
 package telegram
 
 import (
-	"errors"
+	"fmt"
 	"strconv"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -44,10 +44,10 @@ func resourceTelegramBotWebhookCreate(d *schema.ResourceData, m interface{}) err
 	}
 	result, err := botAPI.SetWebhook(config)
 	if err != nil {
-		return err
+		return fmt.Errorf("setWebhook error: %w", err)
 	}
 	if !result.Ok {
-		return errors.New(result.Description)
+		return fmt.Errorf("setWebhook error: %s", result.Description)
 	}
 	d.SetId(strconv.Itoa(botAPI.Self.ID))
 	return resourceTelegramBotWebhookRead(d, m)
@@ -57,7 +57,7 @@ func resourceTelegramBotWebhookRead(d *schema.ResourceData, m interface{}) error
 	botAPI := m.(*tgbotapi.BotAPI)
 	info, err := botAPI.GetWebhookInfo()
 	if err != nil {
-		return err
+		return fmt.Errorf("getWebhookInfo error: %w", err)
 	}
 	url := info.URL
 	if url == "" {
@@ -81,10 +81,10 @@ func resourceTelegramBotWebhookDelete(d *schema.ResourceData, m interface{}) err
 	botAPI := m.(*tgbotapi.BotAPI)
 	result, err := botAPI.RemoveWebhook()
 	if err != nil {
-		return err
+		return fmt.Errorf("removeWebhook error: %w", err)
 	}
 	if !result.Ok {
-		return errors.New(result.Description)
+		return fmt.Errorf("removeWebhook error: %s", result.Description)
 	}
 	d.SetId("")
 	return nil

@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"errors"
+	"fmt"
 	"os"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -37,5 +38,9 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	if token == "" {
 		return nil, errors.New("either bot_token or the environment variable TELEGRAM_BOT_TOKEN should be set")
 	}
-	return tgbotapi.NewBotAPI(token)
+	botAPI, err := tgbotapi.NewBotAPI(token)
+	if err != nil {
+		return nil, fmt.Errorf("error creating Telegram API client: %w", err)
+	}
+	return botAPI, nil
 }
