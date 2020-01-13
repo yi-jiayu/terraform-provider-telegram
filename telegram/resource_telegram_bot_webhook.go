@@ -42,12 +42,18 @@ func resourceTelegramBotWebhookCreate(d *schema.ResourceData, m interface{}) err
 	if cert, ok := d.Get("certificate").(string); ok && cert != "" {
 		config.Certificate = tgbotapi.FileBytes{Bytes: []byte(cert)}
 	}
-	result, err := botAPI.SetWebhook(config)
+	err := retry(0, 3, func() error {
+		result, err := botAPI.SetWebhook(config)
+		if err != nil {
+			return fmt.Errorf("setWebhook error: %w", err)
+		}
+		if !result.Ok {
+			return fmt.Errorf("setWebhook error: %s", result.Description)
+		}
+		return nil
+	})
 	if err != nil {
-		return fmt.Errorf("setWebhook error: %w", err)
-	}
-	if !result.Ok {
-		return fmt.Errorf("setWebhook error: %s", result.Description)
+		return err
 	}
 	d.SetId(strconv.Itoa(botAPI.Self.ID))
 	return resourceTelegramBotWebhookRead(d, m)
