@@ -14,5 +14,4 @@ output "bot_link" {
 
 resource "telegram_bot_webhook" "example" {
   url = "https://example.com/webhook"
-  certificate = file("cert.pem")
 }
