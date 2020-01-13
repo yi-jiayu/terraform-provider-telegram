@@ -29,11 +29,24 @@ resource "telegram_bot_webhook" "example" {
 			{
 				Config: `
 resource "telegram_bot_webhook" "example" {
+  url = "https://www.example.com/webhook"
+  certificate = file("../cert.pem")
+}`,
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("telegram_bot_webhook.example", "has_custom_certificate", "true"),
+					testAccResourceTelegramBotWebhookCertificateSet(true),
+				),
+			},
+			{
+				Config: `
+resource "telegram_bot_webhook" "example" {
   url = "https://www.example.com/newWebhook"
 }`,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("telegram_bot_webhook.example", "url", "https://www.example.com/newWebhook"),
+					resource.TestCheckResourceAttr("telegram_bot_webhook.example", "has_custom_certificate", "false"),
 					testAccResourceTelegramBotWebhook("telegram_bot_webhook.example"),
+					testAccResourceTelegramBotWebhookCertificateSet(false),
 				),
 			},
 			{
@@ -70,6 +83,20 @@ func testAccResourceTelegramBotWebhook(n string) resource.TestCheckFunc {
 		}
 		if got, want := info.URL, rs.Primary.Attributes["url"]; got != want {
 			return fmt.Errorf("wanted webhook to be set to %s, got %s", want, got)
+		}
+		return nil
+	}
+}
+
+func testAccResourceTelegramBotWebhookCertificateSet(want bool) resource.TestCheckFunc {
+	return func(*terraform.State) error {
+		botAPI := testAccProvider.Meta().(*tgbotapi.BotAPI)
+		info, err := botAPI.GetWebhookInfo()
+		if err != nil {
+			return err
+		}
+		if got := info.HasCustomCertificate; got != want {
+			return fmt.Errorf("wanted custom certificate to be %t, got %t", want, got)
 		}
 		return nil
 	}

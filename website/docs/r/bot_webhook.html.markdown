@@ -21,8 +21,8 @@ resource "telegram_bot_webhook" "example" {
 The following arguments are supported:
 
 * `url` - (Required) The webhook URL.
-* `certificate` - (Optional) A PEM-encoded public key to be used with
-  self-signed certificates.
+* `certificate` - (Optional) A string containing a PEM-encoded
+  public key to be used with self-signed certificates.
 * `max_connections` - (Optional) Maximum allowed number of simultaneous
   connections to the webhook for update delivery, 1-100. Defaults to 40. Use
   lower values to limit the load on your bot‘s server, and higher values to
