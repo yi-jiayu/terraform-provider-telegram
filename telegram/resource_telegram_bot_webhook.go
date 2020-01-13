@@ -63,9 +63,17 @@ func resourceTelegramBotWebhookCreate(d *schema.ResourceData, m interface{}) err
 
 func resourceTelegramBotWebhookRead(d *schema.ResourceData, m interface{}) error {
 	botAPI := m.(*tgbotapi.BotAPI)
-	info, err := botAPI.GetWebhookInfo()
+	var info tgbotapi.WebhookInfo
+	err := internal.Retry(3, func() error {
+		var err error
+		info, err = botAPI.GetWebhookInfo()
+		if err != nil {
+			return fmt.Errorf("getWebhookInfo error: %w", err)
+		}
+		return nil
+	})
 	if err != nil {
-		return fmt.Errorf("getWebhookInfo error: %w", err)
+		return err
 	}
 	url := info.URL
 	if url == "" {
@@ -87,12 +95,18 @@ func resourceTelegramBotWebhookUpdate(d *schema.ResourceData, m interface{}) err
 
 func resourceTelegramBotWebhookDelete(d *schema.ResourceData, m interface{}) error {
 	botAPI := m.(*tgbotapi.BotAPI)
-	result, err := botAPI.RemoveWebhook()
+	err := internal.Retry(3, func() error {
+		result, err := botAPI.RemoveWebhook()
+		if err != nil {
+			return fmt.Errorf("removeWebhook error: %w", err)
+		}
+		if !result.Ok {
+			return fmt.Errorf("removeWebhook error: %s", result.Description)
+		}
+		return nil
+	})
 	if err != nil {
-		return fmt.Errorf("removeWebhook error: %w", err)
-	}
-	if !result.Ok {
-		return fmt.Errorf("removeWebhook error: %s", result.Description)
+		return err
 	}
 	d.SetId("")
 	return nil

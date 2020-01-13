@@ -7,6 +7,8 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+
+	"github.com/yi-jiayu/terraform-provider-telegram/telegram/internal"
 )
 
 func Provider() *schema.Provider {
@@ -38,9 +40,14 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	if token == "" {
 		return nil, errors.New("either bot_token or the environment variable TELEGRAM_BOT_TOKEN should be set")
 	}
-	botAPI, err := tgbotapi.NewBotAPI(token)
-	if err != nil {
-		return nil, fmt.Errorf("error creating Telegram API client: %w", err)
-	}
-	return botAPI, nil
+	var botAPI *tgbotapi.BotAPI
+	err := internal.Retry(3, func() error {
+		var err error
+		botAPI, err = tgbotapi.NewBotAPI(token)
+		if err != nil {
+			return fmt.Errorf("error creating Telegram API client: %w", err)
+		}
+		return nil
+	})
+	return botAPI, err
 }
