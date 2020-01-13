@@ -30,7 +30,7 @@ resource "telegram_bot_webhook" "example" {
 				Config: `
 resource "telegram_bot_webhook" "example" {
   url = "https://www.example.com/webhook"
-  certificate = file("../cert.pem")
+  certificate = file("test-fixtures/cert.pem")
 }`,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("telegram_bot_webhook.example", "has_custom_certificate", "true"),
