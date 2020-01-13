@@ -1,10 +1,24 @@
 # Terraform Provider for Telegram
+Manage Telegram resources with Terraform
 
-Currently only supports bot-related resources. Useful in Telegram bot projects.
+## Provider Reference
+
+### [Telegram provider](website/docs/index.html.markdown)
+
+### Data Sources
+
+- [`telegram_bot`](website/docs/d/bot.html.markdown) - Get information about
+  the currently-authenticated Telegram bot
+
+### Resources
+
+- [`telegram_bot_webhook`](website/docs/r/bot_webhook.html.markdown) - Manage
+  the webhook for the currently-authenticated Telegram bot
 
 ## Example Usage
 
-If we have a bot implemented as a Google Cloud Function, we can set the bot webhook in the same Terraform project:
+If we have a bot implemented as a Google Cloud Function, we can set the bot
+webhook in the same Terraform project:
 
 ```hcl
 resource "google_cloudfunctions_function" "my_bot" {
