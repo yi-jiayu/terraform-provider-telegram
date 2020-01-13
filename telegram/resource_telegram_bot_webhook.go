@@ -6,6 +6,8 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+
+	"github.com/yi-jiayu/terraform-provider-telegram/telegram/internal"
 )
 
 func resourceTelegramBotWebhook() *schema.Resource {
@@ -42,7 +44,7 @@ func resourceTelegramBotWebhookCreate(d *schema.ResourceData, m interface{}) err
 	if cert, ok := d.Get("certificate").(string); ok && cert != "" {
 		config.Certificate = tgbotapi.FileBytes{Bytes: []byte(cert)}
 	}
-	err := retry(0, 3, func() error {
+	err := internal.Retry(3, func() error {
 		result, err := botAPI.SetWebhook(config)
 		if err != nil {
 			return fmt.Errorf("setWebhook error: %w", err)
