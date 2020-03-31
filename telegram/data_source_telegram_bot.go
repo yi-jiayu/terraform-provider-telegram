@@ -1,10 +1,11 @@
 package telegram
 
 import (
+	"fmt"
 	"strconv"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/yi-jiayu/ted"
 )
 
 func dataSourceTelegramBot() *schema.Resource {
@@ -28,16 +29,19 @@ func dataSourceTelegramBot() *schema.Resource {
 }
 
 func dataSourceTelegramBotRead(d *schema.ResourceData, m interface{}) error {
-	botAPI := m.(*tgbotapi.BotAPI)
-	self := botAPI.Self
-	d.SetId(strconv.Itoa(self.ID))
-	if err := d.Set("user_id", self.ID); err != nil {
+	bot := m.(ted.Bot)
+	me, err := bot.GetMe()
+	if err != nil {
+		return fmt.Errorf("getMe error: %w", err)
+	}
+	d.SetId(strconv.Itoa(me.ID))
+	if err := d.Set("user_id", me.ID); err != nil {
 		return err
 	}
-	if err := d.Set("name", self.FirstName); err != nil {
+	if err := d.Set("name", me.FirstName); err != nil {
 		return err
 	}
-	if err := d.Set("username", self.UserName); err != nil {
+	if err := d.Set("username", me.Username); err != nil {
 		return err
 	}
 	return nil

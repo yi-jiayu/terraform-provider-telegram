@@ -1,11 +1,11 @@
 package telegram
 
 import (
+	"encoding/json"
 	"fmt"
-	"strconv"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/yi-jiayu/ted"
 
 	"github.com/yi-jiayu/terraform-provider-telegram/telegram/internal"
 )
@@ -21,54 +21,48 @@ func resourceTelegramBotWebhook() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
-			"certificate": {
-				Type:     schema.TypeString,
-				Optional: true,
-			},
 			"max_connections": {
 				Type:     schema.TypeInt,
 				Optional: true,
-			},
-			"has_custom_certificate": {
-				Type:     schema.TypeBool,
-				Computed: true,
+				Default:  40,
 			},
 		},
 	}
 }
 
 func resourceTelegramBotWebhookCreate(d *schema.ResourceData, m interface{}) error {
-	botAPI := m.(*tgbotapi.BotAPI)
+	bot := m.(ted.Bot)
 	url := d.Get("url").(string)
-	config := tgbotapi.NewWebhook(url)
-	if cert, ok := d.Get("certificate").(string); ok && cert != "" {
-		config.Certificate = tgbotapi.FileBytes{Bytes: []byte(cert)}
+	maxConnections := d.Get("max_connections").(int)
+	setWebhook := ted.SetWebhookRequest{
+		URL:            url,
+		MaxConnections: maxConnections,
 	}
 	err := internal.Retry(3, func() error {
-		result, err := botAPI.SetWebhook(config)
+		_, err := bot.Do(setWebhook)
 		if err != nil {
 			return fmt.Errorf("setWebhook error: %w", err)
-		}
-		if !result.Ok {
-			return fmt.Errorf("setWebhook error: %s", result.Description)
 		}
 		return nil
 	})
 	if err != nil {
 		return err
 	}
-	d.SetId(strconv.Itoa(botAPI.Self.ID))
+	d.SetId("webhook")
 	return resourceTelegramBotWebhookRead(d, m)
 }
 
 func resourceTelegramBotWebhookRead(d *schema.ResourceData, m interface{}) error {
-	botAPI := m.(*tgbotapi.BotAPI)
-	var info tgbotapi.WebhookInfo
+	bot := m.(ted.Bot)
+	var info ted.WebhookInfo
 	err := internal.Retry(3, func() error {
-		var err error
-		info, err = botAPI.GetWebhookInfo()
+		res, err := bot.Do(ted.GetWebhookInfoRequest{})
 		if err != nil {
 			return fmt.Errorf("getWebhookInfo error: %w", err)
+		}
+		err = json.Unmarshal(res.Result, &info)
+		if err != nil {
+			return err
 		}
 		return nil
 	})
@@ -83,7 +77,7 @@ func resourceTelegramBotWebhookRead(d *schema.ResourceData, m interface{}) error
 	if err := d.Set("url", url); err != nil {
 		return err
 	}
-	if err := d.Set("has_custom_certificate", info.HasCustomCertificate); err != nil {
+	if err := d.Set("max_connections", info.MaxConnections); err != nil {
 		return err
 	}
 	return nil
@@ -94,14 +88,12 @@ func resourceTelegramBotWebhookUpdate(d *schema.ResourceData, m interface{}) err
 }
 
 func resourceTelegramBotWebhookDelete(d *schema.ResourceData, m interface{}) error {
-	botAPI := m.(*tgbotapi.BotAPI)
+	bot := m.(ted.Bot)
+	removeWebhook := ted.SetWebhookRequest{}
 	err := internal.Retry(3, func() error {
-		result, err := botAPI.RemoveWebhook()
+		_, err := bot.Do(removeWebhook)
 		if err != nil {
 			return fmt.Errorf("removeWebhook error: %w", err)
-		}
-		if !result.Ok {
-			return fmt.Errorf("removeWebhook error: %s", result.Description)
 		}
 		return nil
 	})

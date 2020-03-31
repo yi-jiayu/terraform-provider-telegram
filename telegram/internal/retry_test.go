@@ -6,14 +6,13 @@ import (
 	"strings"
 	"testing"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"github.com/yi-jiayu/ted"
 )
 
 func Test_retry(t *testing.T) {
 	f := func() error {
-		return tgbotapi.Error{
-			Message: "error",
-			ResponseParameters: tgbotapi.ResponseParameters{
+		return ted.Response{
+			Parameters: &ted.ResponseParameters{
 				RetryAfter: 1,
 			},
 		}
@@ -35,22 +34,18 @@ func Test_isRetryable(t *testing.T) {
 		wantRetryAfter int
 	}{
 		{
-			name: "tgbotapi.Error",
-			err: tgbotapi.Error{
-				ResponseParameters: tgbotapi.ResponseParameters{RetryAfter: 1},
+			name: "429 error from Telegram",
+			err: ted.Response{
+				Parameters: &ted.ResponseParameters{
+					RetryAfter: 1,
+				},
 			},
 			wantOk:         true,
 			wantRetryAfter: 1,
 		},
 		{
-			name:           "wrapped tgbotapi.Error",
-			err:            fmt.Errorf("%w", tgbotapi.Error{ResponseParameters: tgbotapi.ResponseParameters{RetryAfter: 1}}),
-			wantOk:         true,
-			wantRetryAfter: 1,
-		},
-		{
-			name:           "retryable error message",
-			err:            errors.New("Too Many Requests: retry after 1"),
+			name:           "wrapped 429 error from Telegram",
+			err:            fmt.Errorf("%w", ted.Response{Parameters: &ted.ResponseParameters{RetryAfter: 1}}),
 			wantOk:         true,
 			wantRetryAfter: 1,
 		},

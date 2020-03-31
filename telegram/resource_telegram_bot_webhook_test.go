@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/yi-jiayu/ted"
 )
 
 func TestAccResourceTelegramBotWebhook(t *testing.T) {
@@ -29,30 +29,17 @@ resource "telegram_bot_webhook" "example" {
 			{
 				Config: `
 resource "telegram_bot_webhook" "example" {
-  url = "https://www.example.com/webhook"
-  certificate = file("test-fixtures/cert.pem")
-}`,
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("telegram_bot_webhook.example", "has_custom_certificate", "true"),
-					testAccResourceTelegramBotWebhookCertificateSet(true),
-				),
-			},
-			{
-				Config: `
-resource "telegram_bot_webhook" "example" {
   url = "https://www.example.com/newWebhook"
 }`,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("telegram_bot_webhook.example", "url", "https://www.example.com/newWebhook"),
-					resource.TestCheckResourceAttr("telegram_bot_webhook.example", "has_custom_certificate", "false"),
 					testAccResourceTelegramBotWebhook("telegram_bot_webhook.example"),
-					testAccResourceTelegramBotWebhookCertificateSet(false),
 				),
 			},
 			{
 				PreConfig: func() {
-					botAPI := testAccProvider.Meta().(*tgbotapi.BotAPI)
-					_, err := botAPI.RemoveWebhook()
+					bot := testAccProvider.Meta().(ted.Bot)
+					_, err := bot.Do(ted.SetWebhookRequest{})
 					if err != nil {
 						t.Fatalf("error removing webhook: %s", err)
 					}
@@ -76,7 +63,7 @@ func testAccResourceTelegramBotWebhook(n string) resource.TestCheckFunc {
 		if !ok {
 			return fmt.Errorf("resource not found: %s", n)
 		}
-		botAPI := testAccProvider.Meta().(*tgbotapi.BotAPI)
+		botAPI := testAccProvider.Meta().(ted.Bot)
 		info, err := botAPI.GetWebhookInfo()
 		if err != nil {
 			return err
@@ -88,22 +75,8 @@ func testAccResourceTelegramBotWebhook(n string) resource.TestCheckFunc {
 	}
 }
 
-func testAccResourceTelegramBotWebhookCertificateSet(want bool) resource.TestCheckFunc {
-	return func(*terraform.State) error {
-		botAPI := testAccProvider.Meta().(*tgbotapi.BotAPI)
-		info, err := botAPI.GetWebhookInfo()
-		if err != nil {
-			return err
-		}
-		if got := info.HasCustomCertificate; got != want {
-			return fmt.Errorf("wanted custom certificate to be %t, got %t", want, got)
-		}
-		return nil
-	}
-}
-
 func testAccResourceTelegramBotWebhookDestroy(*terraform.State) error {
-	botAPI := testAccProvider.Meta().(*tgbotapi.BotAPI)
+	botAPI := testAccProvider.Meta().(ted.Bot)
 	info, err := botAPI.GetWebhookInfo()
 	if err != nil {
 		return err
