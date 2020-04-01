@@ -12,7 +12,7 @@ import (
 // If so, the second return value indicates how many seconds to wait before retrying.
 func isRetryable(err error) (bool, int) {
 	var telegramError ted.Response
-	if ok := errors.As(err, &telegramError); ok && telegramError.Parameters.RetryAfter > 0 {
+	if ok := errors.As(err, &telegramError); ok && telegramError.Parameters != nil && telegramError.Parameters.RetryAfter > 0 {
 		return true, telegramError.Parameters.RetryAfter
 	}
 	return false, 0

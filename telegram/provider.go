@@ -21,7 +21,8 @@ func Provider() *schema.Provider {
 			"telegram_bot": dataSourceTelegramBot(),
 		},
 		ResourcesMap: map[string]*schema.Resource{
-			"telegram_bot_webhook": resourceTelegramBotWebhook(),
+			"telegram_bot_webhook":  resourceTelegramBotWebhook(),
+			"telegram_bot_commands": resourceTelegramBotCommands(),
 		},
 		ConfigureFunc: providerConfigure,
 	}
