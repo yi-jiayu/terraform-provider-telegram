@@ -19,6 +19,23 @@ resource "telegram_bot_webhook" "my_bot" {
 }
 ```
 
+You can also manage bot commands using Terraform:
+
+```hcl
+resource "telegram_bot_commands" "example" {
+  commands = [
+    {
+      command = "start",
+      description = "View welcome message"
+    },
+    {
+      command = "help",
+      description = "Show help"
+    }
+  ]
+}
+```
+
 ## Installation
 
 Download the [latest
@@ -43,3 +60,5 @@ providers](https://www.terraform.io/docs/configuration/providers.html#third-part
 
 - [`telegram_bot_webhook`](website/docs/r/bot_webhook.html.markdown) - Manage
   the webhook for the currently-authenticated Telegram bot
+- [`telegram_bot_commands`](website/docs/r/bot_commands.html.markdown) - Manage
+  commands for the currently-authenticated Telegram bot
