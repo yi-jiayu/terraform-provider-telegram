@@ -13,6 +13,7 @@ For more information, refer to:
 ```hcl
 resource "telegram_bot_webhook" "example" {
   url = "https://example.com/webhook"
+  allowed_updates = ["message", "edited_channel_post", "callback_query"]
 }
 ```
 
@@ -25,6 +26,11 @@ The following arguments are supported:
   connections to the webhook for update delivery, 1-100. Defaults to 40. Use
   lower values to limit the load on your bot‘s server, and higher values to
   increase your bot’s throughput.
+* `allowed_updates` - (Optional) A JSON-serialized list of the update types you
+  want your bot to receive. See
+  [Update](https://core.telegram.org/bots/api#update) for a complete list of
+  available update types. Specify an empty list to receive all updates
+  regardless of type (default).
 
 ## Attributes Reference
 

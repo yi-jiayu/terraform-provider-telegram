@@ -26,6 +26,12 @@ func resourceTelegramBotWebhook() *schema.Resource {
 				Optional: true,
 				Default:  40,
 			},
+			"allowed_updates": {
+				Type:     schema.TypeSet,
+				Optional: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+				Set:      schema.HashString,
+			},
 		},
 	}
 }
@@ -37,6 +43,15 @@ func resourceTelegramBotWebhookCreate(d *schema.ResourceData, m interface{}) err
 	setWebhook := ted.SetWebhookRequest{
 		URL:            url,
 		MaxConnections: maxConnections,
+		AllowedUpdates: []string{},
+	}
+	if v, ok := d.GetOk("allowed_updates"); ok {
+		vs := v.(*schema.Set).List()
+		allowedUpdates := make([]string, len(vs))
+		for i, updateType := range vs {
+			allowedUpdates[i] = updateType.(string)
+		}
+		setWebhook.AllowedUpdates = allowedUpdates
 	}
 	err := internal.Retry(3, func() error {
 		_, err := bot.Do(setWebhook)
@@ -79,6 +94,15 @@ func resourceTelegramBotWebhookRead(d *schema.ResourceData, m interface{}) error
 	}
 	if err := d.Set("max_connections", info.MaxConnections); err != nil {
 		return err
+	}
+	if len(info.AllowedUpdates) > 0 {
+		allowedUpdates := schema.NewSet(schema.HashString, nil)
+		for _, updateType := range info.AllowedUpdates {
+			allowedUpdates.Add(updateType)
+		}
+		if err := d.Set("allowed_updates", info.AllowedUpdates); err != nil {
+			return err
+		}
 	}
 	return nil
 }

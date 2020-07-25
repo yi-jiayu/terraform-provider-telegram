@@ -47,9 +47,11 @@ resource "telegram_bot_webhook" "example" {
 				Config: `
 resource "telegram_bot_webhook" "example" {
   url = "https://www.example.com/newWebhook"
+  allowed_updates = ["message", "inline_query"]
 }`,
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("telegram_bot_webhook.example", "url", "https://www.example.com/newWebhook"),
+					resource.TestCheckResourceAttr("telegram_bot_webhook.example", "allowed_updates.#", "2"),
 					testAccResourceTelegramBotWebhook("telegram_bot_webhook.example"),
 				),
 			},
