@@ -1,49 +1,52 @@
-name: Release
+# Based on https://github.com/hashicorp/terraform-provider-scaffolding/blob/dfba65bea75c712206e6fa2a1b5523eda284956c/.github/workflows/release.yml
+#
+# This GitHub action can publish assets for release when a tag is created.
+# Currently its setup to run on any tag that matches the pattern "v*" (ie. v0.1.0).
+#
+# This uses an action (paultyng/ghaction-import-gpg) that assumes you set your 
+# private key in the `GPG_PRIVATE_KEY` secret and passphrase in the `PASSPHRASE`
+# secret. If you would rather own your own GPG handling, please fork this action
+# or use an alternative one for key handling.
+#
+# You will need to pass the `--batch` flag to `gpg` in your signing step 
+# in `goreleaser` to indicate this is being used in a non-interactive mode.
+#
+name: release
 on:
   push:
     tags:
-      - v*
+      - 'v*'
 jobs:
-  test:
-    name: Test
+  goreleaser:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go 1.13
-        uses: actions/setup-go@v1
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+      -
+        name: Unshallow
+        run: git fetch --prune --unshallow
+      -
+        name: Set up Go
+        uses: actions/setup-go@v2
         with:
-          go-version: 1.13
-        id: go
-
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v1
-
-      - name: Download dependencies
-        run: go mod download
-
-      - name: Run tests
-        run: go test -v ./...
+          go-version: 1.14
+      -
+        name: Import GPG key
+        id: import_gpg
+        # TODO: move this to HashiCorp namespace or find alternative that is just simple gpg commands
+        # see https://github.com/hashicorp/terraform-provider-scaffolding/issues/22
+        uses: paultyng/ghaction-import-gpg@v2.1.0
         env:
-          TF_ACC: 1
-          TELEGRAM_BOT_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
-
-  release:
-    name: Release
-    runs-on: ubuntu-latest
-    needs: [test]
-    steps:
-      - name: Set up Go 1.13
-        uses: actions/setup-go@v1
-        with:
-          go-version: 1.13
-        id: go
-
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v1
-
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v1
+          # These secrets will need to be configured for the repository:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+      -
+        name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v2
         with:
           version: latest
           args: release --rm-dist
         env:
+          GPG_FINGERPRINT: ${{ steps.import_gpg.outputs.fingerprint }}
+          # GitHub sets this automatically
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
