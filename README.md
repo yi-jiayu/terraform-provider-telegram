@@ -38,14 +38,10 @@ resource "telegram_bot_commands" "example" {
 
 ## Installation
 
-Download the [latest
-release](https://github.com/yi-jiayu/terraform-provider-telegram/releases) for
-your OS and extract it to the user plugins directory, which is located at
-`%APPDATA%\terraform.d\plugins` on Windows and `~/.terraform.d/plugins` on
-Linux and macOS.
+You can find this provider on the [Terraform
+Registry](https://registry.terraform.io/):
 
-See also the [Terraform documentation on third-party
-providers](https://www.terraform.io/docs/configuration/providers.html#third-party-plugins).
+https://registry.terraform.io/providers/yi-jiayu/telegram/latest
 
 ## Reference
 
