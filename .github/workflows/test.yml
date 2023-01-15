@@ -1,24 +1,105 @@
-name: Test
-on: [push]
+# Based on https://github.com/hashicorp/terraform-provider-scaffolding/blob/787b93c8a91e752da72202510c82ef50e299ef10/.github/workflows/test.yml
+
+# This GitHub action runs your tests for each commit push and/or PR. Optionally
+# you can turn it on using a cron schedule for regular testing.
+#
+name: Tests
+on:
+  pull_request:
+    paths-ignore:
+      - 'README.md'
+  push:
+    paths-ignore:
+      - 'README.md'
+  # For systems with an upstream API that could drift unexpectedly (like most SaaS systems, etc.),
+  # we recommend testing at a regular interval not necessarily tied to code changes. This will
+  # ensure you are alerted to something breaking due to an API change, even if the code did not
+  # change.
+  schedule:
+    - cron: '0 13 * * 1'
 jobs:
-  test:
-    name: Test
+  # ensure the code builds...
+  build:
+    name: Build
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - name: Set up Go 1.13
-        uses: actions/setup-go@v1
-        with:
-          go-version: 1.13
-        id: go
 
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v1
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
 
-      - name: Download dependencies
-        run: go mod download
+      - name: Set up Go
+        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+        id: go
 
-      - name: Run tests
-        run: go test -v ./...
+      - name: Get dependencies
+        run: |
+          go mod download
+
+      - name: Build
+        run: |
+          go build -v .
+
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+      - uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - run: go generate ./...
+      - name: git diff
+        run: |
+          git diff --compact-summary --exit-code || \
+            (echo; echo "Unexpected difference in directories after code generation. Run 'go generate ./...' command and commit."; exit 1)
+
+  # run acceptance tests in a matrix with Terraform core versions
+  test:
+    name: Matrix Test
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        # list whatever Terraform versions here you would like to support
+        terraform:
+          - '0.12.*'
+          - '0.13.*'
+          - '0.14.*'
+          - '0.15.*'
+          - '1.0.*'
+          - '1.1.*'
+          - '1.2.*'
+    steps:
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
+
+      - name: Set up Go
+        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+        id: go
+
+      - uses: hashicorp/setup-terraform@633666f66e0061ca3b725c73b2ec20cd13a8fdd1 # v2.0.3
+        with:
+          terraform_version: ${{ matrix.terraform }}
+          terraform_wrapper: false
+
+      - name: Get dependencies
+        run: |
+          go mod download
+
+      - name: TF acceptance tests
+        timeout-minutes: 10
+        run: |
+          go test -v -cover ./...
         env:
-          TF_ACC: 1
+          TF_ACC: "1"
           TELEGRAM_BOT_TOKEN: ${{ secrets.TEST_BOT_TOKEN }}
