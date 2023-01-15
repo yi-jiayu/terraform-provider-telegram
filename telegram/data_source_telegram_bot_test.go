@@ -34,10 +34,10 @@ func testAccDataSourceTelegramBot(n string) resource.TestCheckFunc {
 		if err != nil {
 			return err
 		}
-		if got, want := rs.Primary.ID, strconv.Itoa(bot.ID); got != want {
+		if got, want := rs.Primary.ID, strconv.FormatInt(bot.ID, 10); got != want {
 			return fmt.Errorf("wanted ID to be %s, got %s", want, got)
 		}
-		if got, want := rs.Primary.Attributes["user_id"], strconv.Itoa(bot.ID); got != want {
+		if got, want := rs.Primary.Attributes["user_id"], strconv.FormatInt(bot.ID, 10); got != want {
 			return fmt.Errorf("wanted user_id to be %s, got %s", want, got)
 		}
 		if got, want := rs.Primary.Attributes["name"], bot.FirstName; got != want {
