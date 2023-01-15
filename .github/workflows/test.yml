@@ -65,6 +65,12 @@ jobs:
     timeout-minutes: 15
     strategy:
       fail-fast: false
+
+      # Run sequentially, because the acceptance test modify
+      # remote state and running in parallel will cause test
+      # runs to affect each other.
+      max-parallel: 1
+
       matrix:
         # list whatever Terraform versions here you would like to support
         terraform:
