@@ -3,7 +3,7 @@ package telegram
 import (
 	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/yi-jiayu/ted"
 
 	"github.com/yi-jiayu/terraform-provider-telegram/telegram/internal"
