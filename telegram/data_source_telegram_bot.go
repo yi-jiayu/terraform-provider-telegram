@@ -34,7 +34,7 @@ func dataSourceTelegramBotRead(d *schema.ResourceData, m interface{}) error {
 	if err != nil {
 		return fmt.Errorf("getMe error: %w", err)
 	}
-	d.SetId(strconv.Itoa(me.ID))
+	d.SetId(strconv.FormatInt(me.ID, 10))
 	if err := d.Set("user_id", me.ID); err != nil {
 		return err
 	}
