@@ -13,9 +13,9 @@ import (
 
 func TestAccResourceTelegramBotCommands(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccResourceTelegramBotCommandsDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccResourceTelegramBotCommandsDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: `resource "telegram_bot_commands" "example" {

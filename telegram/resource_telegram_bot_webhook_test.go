@@ -12,9 +12,9 @@ import (
 
 func TestAccResourceTelegramBotWebhook(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		PreCheck:     func() { testAccPreCheck(t) },
-		Providers:    testAccProviders,
-		CheckDestroy: testAccResourceTelegramBotWebhookDestroy,
+		PreCheck:          func() { testAccPreCheck(t) },
+		ProviderFactories: testAccProviderFactories,
+		CheckDestroy:      testAccResourceTelegramBotWebhookDestroy,
 		Steps: []resource.TestStep{
 			{
 				Config: `

@@ -1,8 +1,10 @@
 package telegram
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/yi-jiayu/ted"
 
@@ -11,10 +13,10 @@ import (
 
 func resourceTelegramBotCommands() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceTelegramBotCommandsCreate,
-		Read:   resourceTelegramBotCommandsRead,
-		Update: resourceTelegramBotCommandsUpdate,
-		Delete: resourceTelegramBotCommandsDelete,
+		CreateContext: resourceTelegramBotCommandsCreate,
+		ReadContext:   resourceTelegramBotCommandsRead,
+		UpdateContext: resourceTelegramBotCommandsUpdate,
+		Delete:        resourceTelegramBotCommandsDelete,
 		Schema: map[string]*schema.Schema{
 			"commands": {
 				Type: schema.TypeList,
@@ -30,12 +32,12 @@ func resourceTelegramBotCommands() *schema.Resource {
 	}
 }
 
-func resourceTelegramBotCommandsCreate(d *schema.ResourceData, m interface{}) error {
+func resourceTelegramBotCommandsCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	bot := m.(ted.Bot)
 	commands := d.Get("commands").([]interface{})
 	expanded, err := expandBotCommands(commands)
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	setMyCommands := ted.SetMyCommandsRequest{
 		Commands: expanded,
@@ -48,24 +50,29 @@ func resourceTelegramBotCommandsCreate(d *schema.ResourceData, m interface{}) er
 		return nil
 	})
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	d.SetId("commands")
-	return resourceTelegramBotCommandsRead(d, m)
+	return resourceTelegramBotCommandsRead(ctx, d, m)
 }
 
-func resourceTelegramBotCommandsRead(d *schema.ResourceData, m interface{}) error {
+func resourceTelegramBotCommandsRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	bot := m.(ted.Bot)
 	myCommands, err := bot.GetMyCommands()
 	if err != nil {
-		return fmt.Errorf("getMyCommands error: %w", err)
+		err := fmt.Errorf("getMyCommands error: %w", err)
+		return diag.FromErr(err)
 	}
 	commands := flattenBotCommands(myCommands)
-	return d.Set("commands", commands)
+	err = d.Set("commands", commands)
+	if err != nil {
+		return diag.FromErr(err)
+	}
+	return nil
 }
 
-func resourceTelegramBotCommandsUpdate(d *schema.ResourceData, m interface{}) error {
-	return resourceTelegramBotCommandsCreate(d, m)
+func resourceTelegramBotCommandsUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	return resourceTelegramBotCommandsCreate(ctx, d, m)
 }
 
 func resourceTelegramBotCommandsDelete(d *schema.ResourceData, m interface{}) error {

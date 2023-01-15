@@ -1,9 +1,11 @@
 package telegram
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/yi-jiayu/ted"
 
@@ -12,10 +14,10 @@ import (
 
 func resourceTelegramBotWebhook() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceTelegramBotWebhookCreate,
-		Read:   resourceTelegramBotWebhookRead,
-		Update: resourceTelegramBotWebhookUpdate,
-		Delete: resourceTelegramBotWebhookDelete,
+		CreateContext: resourceTelegramBotWebhookCreate,
+		ReadContext:   resourceTelegramBotWebhookRead,
+		UpdateContext: resourceTelegramBotWebhookUpdate,
+		Delete:        resourceTelegramBotWebhookDelete,
 		Schema: map[string]*schema.Schema{
 			"url": {
 				Type:     schema.TypeString,
@@ -36,7 +38,7 @@ func resourceTelegramBotWebhook() *schema.Resource {
 	}
 }
 
-func resourceTelegramBotWebhookCreate(d *schema.ResourceData, m interface{}) error {
+func resourceTelegramBotWebhookCreate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	bot := m.(ted.Bot)
 	url := d.Get("url").(string)
 	maxConnections := d.Get("max_connections").(int)
@@ -61,13 +63,13 @@ func resourceTelegramBotWebhookCreate(d *schema.ResourceData, m interface{}) err
 		return nil
 	})
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	d.SetId("webhook")
-	return resourceTelegramBotWebhookRead(d, m)
+	return resourceTelegramBotWebhookRead(ctx, d, m)
 }
 
-func resourceTelegramBotWebhookRead(d *schema.ResourceData, m interface{}) error {
+func resourceTelegramBotWebhookRead(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
 	bot := m.(ted.Bot)
 	var info ted.WebhookInfo
 	err := internal.Retry(3, func() error {
@@ -82,7 +84,7 @@ func resourceTelegramBotWebhookRead(d *schema.ResourceData, m interface{}) error
 		return nil
 	})
 	if err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	url := info.URL
 	if url == "" {
@@ -90,10 +92,10 @@ func resourceTelegramBotWebhookRead(d *schema.ResourceData, m interface{}) error
 		return nil
 	}
 	if err := d.Set("url", url); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	if err := d.Set("max_connections", info.MaxConnections); err != nil {
-		return err
+		return diag.FromErr(err)
 	}
 	if len(info.AllowedUpdates) > 0 {
 		allowedUpdates := schema.NewSet(schema.HashString, nil)
@@ -101,14 +103,14 @@ func resourceTelegramBotWebhookRead(d *schema.ResourceData, m interface{}) error
 			allowedUpdates.Add(updateType)
 		}
 		if err := d.Set("allowed_updates", info.AllowedUpdates); err != nil {
-			return err
+			return diag.FromErr(err)
 		}
 	}
 	return nil
 }
 
-func resourceTelegramBotWebhookUpdate(d *schema.ResourceData, m interface{}) error {
-	return resourceTelegramBotWebhookCreate(d, m)
+func resourceTelegramBotWebhookUpdate(ctx context.Context, d *schema.ResourceData, m interface{}) diag.Diagnostics {
+	return resourceTelegramBotWebhookCreate(ctx, d, m)
 }
 
 func resourceTelegramBotWebhookDelete(d *schema.ResourceData, m interface{}) error {

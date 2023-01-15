@@ -8,14 +8,16 @@ import (
 )
 
 var (
-	testAccProvider  *schema.Provider
-	testAccProviders map[string]*schema.Provider
+	testAccProvider          *schema.Provider
+	testAccProviderFactories map[string]func() (*schema.Provider, error)
 )
 
 func init() {
 	testAccProvider = Provider()
-	testAccProviders = map[string]*schema.Provider{
-		"telegram": testAccProvider,
+	testAccProviderFactories = map[string]func() (*schema.Provider, error){
+		"telegram": func() (*schema.Provider, error) {
+			return testAccProvider, nil
+		},
 	}
 }
 
