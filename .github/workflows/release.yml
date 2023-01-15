@@ -1,14 +1,14 @@
-# Based on https://github.com/hashicorp/terraform-provider-scaffolding/blob/dfba65bea75c712206e6fa2a1b5523eda284956c/.github/workflows/release.yml
-#
+# Based on https://github.com/hashicorp/terraform-provider-scaffolding/blob/787b93c8a91e752da72202510c82ef50e299ef10/.github/workflows/release.yml
+
 # This GitHub action can publish assets for release when a tag is created.
 # Currently its setup to run on any tag that matches the pattern "v*" (ie. v0.1.0).
 #
-# This uses an action (paultyng/ghaction-import-gpg) that assumes you set your 
+# This uses an action (hashicorp/ghaction-import-gpg) that assumes you set your
 # private key in the `GPG_PRIVATE_KEY` secret and passphrase in the `PASSPHRASE`
 # secret. If you would rather own your own GPG handling, please fork this action
 # or use an alternative one for key handling.
 #
-# You will need to pass the `--batch` flag to `gpg` in your signing step 
+# You will need to pass the `--batch` flag to `gpg` in your signing step
 # in `goreleaser` to indicate this is being used in a non-interactive mode.
 #
 name: release
@@ -16,33 +16,34 @@ on:
   push:
     tags:
       - 'v*'
+permissions:
+  contents: write
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
     steps:
       -
         name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c # v3.3.0
       -
         name: Unshallow
         run: git fetch --prune --unshallow
       -
         name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568 # v3.5.0
         with:
-          go-version: 1.14
+          go-version-file: 'go.mod'
+          cache: true
       -
         name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@111c56156bcc6918c056dbef52164cfa583dc549 # v5.2.0
         id: import_gpg
-        # TODO: move this to HashiCorp namespace or find alternative that is just simple gpg commands
-        # see https://github.com/hashicorp/terraform-provider-scaffolding/issues/22
-        uses: paultyng/ghaction-import-gpg@v2.1.0
-        env:
-          # These secrets will need to be configured for the repository:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
       -
         name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v2
+        uses: goreleaser/goreleaser-action@8f67e590f2d095516493f017008adc464e63adb1 # v4.1.0
         with:
           version: latest
           args: release --rm-dist

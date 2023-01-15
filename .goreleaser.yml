@@ -1,4 +1,4 @@
-# Based on https://github.com/hashicorp/terraform-provider-scaffolding/blob/dfba65bea75c712206e6fa2a1b5523eda284956c/.goreleaser.yml
+# https://github.com/hashicorp/terraform-provider-scaffolding/blob/787b93c8a91e752da72202510c82ef50e299ef10/.goreleaser.yml
 before:
   hooks:
     # this is just an example and not a requirement for provider building/publishing
@@ -32,6 +32,9 @@ archives:
   - format: zip
     name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
 checksum:
+  extra_files:
+    - glob: 'terraform-registry-manifest.json'
+      name_template: '{{ .ProjectName }}_{{ .Version }}_manifest.json'
   name_template: '{{ .ProjectName }}_{{ .Version }}_SHA256SUMS'
   algorithm: sha256
 signs:
@@ -46,5 +49,9 @@ signs:
       - "${signature}"
       - "--detach-sign"
       - "${artifact}"
+release:
+  extra_files:
+    - glob: 'terraform-registry-manifest.json'
+      name_template: '{{ .ProjectName }}_{{ .Version }}_manifest.json'
 changelog:
   skip: true
